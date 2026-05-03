@@ -1,69 +1,57 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Touch Football Hub",
-    SubTitle = "Custom Reach System",
+    Title = "Touch Football | Lux Style",
+    SubTitle = "Magnitude Reach System",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
-    Acrylic = false,
     Theme = "Dark"
 })
 
-local Tabs = {
-    Main = Window:AddTab({ Title = "Reach", Icon = "target" })
-}
+local Tabs = { Main = Window:AddTab({ Title = "Reach", Icon = "target" }) }
 
--- Variáveis de controle
-local reachValue = 2
+local reachDistance = 10
+local isReachActive = false
 local ballName = "Football"
+local player = game.Players.LocalPlayer
 
--- Função mestre para aplicar o alcance
-local function ApplyReach()
-    local ball = workspace:FindFirstChild(ballName)
-    if ball then
-        ball.Size = Vector3.new(reachValue, reachValue, reachValue)
-        ball.CanCollide = false
-        ball.Transparency = 0.5 -- Para você enxergar o tamanho do alcance
+task.spawn(function()
+    while task.wait() do
+        if isReachActive and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local ball = workspace:FindFirstChild(ballName)
+            if ball and ball:IsA("BasePart") then
+                local distance = (player.Character.HumanoidRootPart.Position - ball.Position).Magnitude
+                if distance <= reachDistance then
+                    firetouchinterest(player.Character["Right Foot"], ball, 0)
+                    firetouchinterest(player.Character["Right Foot"], ball, 1)
+                    firetouchinterest(player.Character["Left Foot"], ball, 0)
+                    firetouchinterest(player.Character["Left Foot"], ball, 1)
+                end
+            end
+        end
     end
-end
+end)
 
--- Componente de Input (Igual ao Lux Hub)
 Tabs.Main:AddInput("ReachInput", {
-    Title = "Definir Reach (1-30)",
-    Default = "2",
-    Placeholder = "Digite o valor...",
-    Numeric = true, -- Aceita apenas números
-    Finished = true, -- Só aplica quando você der 'Enter' ou desclicar
+    Title = "Reach Magnitude (1-30)",
+    Default = "10",
+    Numeric = true,
+    Finished = true,
     Callback = function(Value)
         local num = tonumber(Value)
         if num then
-            -- Limita entre 1 e 30 para evitar bugs ou banimentos imediatos
-            if num > 30 then num = 30 end
-            if num < 1 then num = 1 end
-            
-            reachValue = num
-            ApplyReach()
-            
-            Fluent:Notify({
-                Title = "Reach Atualizado",
-                Content = "Alcance definido para: " .. tostring(num),
-                Duration = 3
-            })
+            reachDistance = math.clamp(num, 1, 30)
+            Fluent:Notify({Title = "Reach", Content = "Distancia definida para: " .. reachDistance})
         end
     end
 })
 
--- Toggle para manter o Reach sempre ativo (Anti-Reset)
-Tabs.Main:AddToggle("AutoReach", {Title = "Auto-Apply Reach", Default = false})
-
--- Loop de verificação em segundo plano
-task.spawn(function()
-    while true do
-        if Fluent.Options.AutoReach.Value then
-            ApplyReach()
-        end
-        task.wait(1) -- Verifica a cada 1 segundo
+Tabs.Main:AddToggle("ReachToggle", {
+    Title = "Ativar Magnitude Reach",
+    Default = false,
+    Callback = function(Value)
+        isReachActive = Value
     end
-end)
+})
 
 Window:SelectTab(1)
