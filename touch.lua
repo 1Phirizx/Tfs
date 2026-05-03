@@ -1,8 +1,8 @@
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+llocal Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Touch Football | TURBO ELITE",
-    SubTitle = "Extreme Priority & No Limits",
+    Title = "Touch Football | FORCE",
+    SubTitle = "No Limits",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Theme = "Dark"
@@ -10,7 +10,7 @@ local Window = Fluent:CreateWindow({
 
 local Tabs = { Main = Window:AddTab({ Title = "Main", Icon = "target" }) }
 
-local reachDistance = 35
+local reachDistance = 45
 local isReachActive = false
 local ballName = "Football"
 local lp = game.Players.LocalPlayer
@@ -20,7 +20,7 @@ local function getBall()
 end
 
 task.spawn(function()
-    game:GetService("RunService").Heartbeat:Connect(function()
+    game:GetService("RunService").PostSimulation:Connect(function()
         if isReachActive and lp.Character then
             local ball = getBall()
             local char = lp.Character
@@ -31,24 +31,19 @@ task.spawn(function()
                 
                 if mag <= reachDistance then
                     pcall(function()
-                        -- Lista expandida para garantir que NAO pegue apenas nos pes
-                        local bodyParts = {
+                        local parts = {
                             char:FindFirstChild("Right Foot"),
                             char:FindFirstChild("Left Foot"),
                             char:FindFirstChild("Right Lower Leg"),
                             char:FindFirstChild("Left Lower Leg"),
-                            char:FindFirstChild("Right Upper Leg"),
-                            char:FindFirstChild("Left Upper Leg"),
-                            root -- Centro de massa (tronco)
+                            root
                         }
-                        
-                        -- MULTIPLICADOR TURBO: 60 disparos por frame
-                        -- Isso satura a prioridade de rede do Delta
-                        for i = 1, 60 do
-                            for _, part in pairs(bodyParts) do
-                                if part then
-                                    firetouchinterest(part, ball, 0)
-                                    firetouchinterest(part, ball, 1)
+
+                        for i = 1, 20 do
+                            for _, p in pairs(parts) do
+                                if p then
+                                    firetouchinterest(p, ball, 0)
+                                    firetouchinterest(p, ball, 1)
                                 end
                             end
                         end
@@ -60,25 +55,18 @@ task.spawn(function()
 end)
 
 Tabs.Main:AddInput("ReachInput", {
-    Title = "Turbo Reach Power (No Limit)",
-    Default = "35",
+    Title = "Reach Distance",
+    Default = "45",
     Numeric = true,
     Finished = true,
     Callback = function(Value)
         local num = tonumber(Value)
-        if num then 
-            reachDistance = num 
-            Fluent:Notify({
-                Title = "Turbo Active",
-                Content = "Current Scale: " .. reachDistance,
-                Duration = 2
-            })
-        end
+        if num then reachDistance = num end
     end
 })
 
 Tabs.Main:AddToggle("ReachToggle", {
-    Title = "Enable Turbo Priority",
+    Title = "Activate",
     Default = false,
     Callback = function(Value)
         isReachActive = Value
