@@ -2,30 +2,41 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 
 local Window = Fluent:CreateWindow({
     Title = "Touch Football | Lux Style",
-    SubTitle = "Magnitude Reach System",
+    SubTitle = "Elite Priority System",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Theme = "Dark"
 })
 
-local Tabs = { Main = Window:AddTab({ Title = "Reach", Icon = "target" }) }
+local Tabs = { 
+    Main = Window:AddTab({ Title = "Main", Icon = "target" }) 
+}
 
-local reachDistance = 10
+local reachDistance = 15
 local isReachActive = false
-local ballName = "Football"
-local player = game.Players.LocalPlayer
+local targetBall = "Football"
+local lp = game.Players.LocalPlayer
 
 task.spawn(function()
-    while task.wait() do
-        if isReachActive and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local ball = workspace:FindFirstChild(ballName)
-            if ball and ball:IsA("BasePart") then
-                local distance = (player.Character.HumanoidRootPart.Position - ball.Position).Magnitude
-                if distance <= reachDistance then
-                    firetouchinterest(player.Character["Right Foot"], ball, 0)
-                    firetouchinterest(player.Character["Right Foot"], ball, 1)
-                    firetouchinterest(player.Character["Left Foot"], ball, 0)
-                    firetouchinterest(player.Character["Left Foot"], ball, 1)
+    while true do
+        game:GetService("RunService").Heartbeat:Wait() 
+        
+        if isReachActive and lp.Character then
+            local root = lp.Character:FindFirstChild("HumanoidRootPart")
+            local ball = workspace:FindFirstChild(targetBall)
+            
+            if root and ball and ball:IsA("BasePart") then
+                local mag = (root.Position - ball.Position).Magnitude
+                if mag <= reachDistance then
+                    for i = 1, 5 do 
+                        pcall(function()
+                            local char = lp.Character
+                            firetouchinterest(char["Right Foot"], ball, 0)
+                            firetouchinterest(char["Right Foot"], ball, 1)
+                            firetouchinterest(char["Left Foot"], ball, 0)
+                            firetouchinterest(char["Left Foot"], ball, 1)
+                        end)
+                    end
                 end
             end
         end
@@ -33,21 +44,26 @@ task.spawn(function()
 end)
 
 Tabs.Main:AddInput("ReachInput", {
-    Title = "Reach Magnitude (1-30)",
-    Default = "10",
+    Title = "Reach Distance",
+    Description = "Set distance to kick before others",
+    Default = "15",
     Numeric = true,
     Finished = true,
     Callback = function(Value)
         local num = tonumber(Value)
         if num then
-            reachDistance = math.clamp(num, 1, 30)
-            Fluent:Notify({Title = "Reach", Content = "Distancia definida para: " .. reachDistance})
+            reachDistance = num
+            Fluent:Notify({
+                Title = "Reach System",
+                Content = "Priority Distance set to: " .. reachDistance,
+                Duration = 3
+            })
         end
     end
 })
 
 Tabs.Main:AddToggle("ReachToggle", {
-    Title = "Ativar Magnitude Reach",
+    Title = "Enable Priority Reach",
     Default = false,
     Callback = function(Value)
         isReachActive = Value
