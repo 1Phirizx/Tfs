@@ -72,4 +72,3 @@ Tabs.Main:AddToggle("ReachToggle", {
 })
 
 Window:SelectTab(1)
-
