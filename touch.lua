@@ -1,8 +1,8 @@
-llocal Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
     Title = "Touch Football | FORCE",
-    SubTitle = "No Limits",
+    SubTitle = "Open Source Edition",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Theme = "Dark"
@@ -10,7 +10,7 @@ local Window = Fluent:CreateWindow({
 
 local Tabs = { Main = Window:AddTab({ Title = "Main", Icon = "target" }) }
 
-local reachDistance = 45
+local reachDistance = 26
 local isReachActive = false
 local ballName = "Football"
 local lp = game.Players.LocalPlayer
@@ -20,31 +20,34 @@ local function getBall()
 end
 
 task.spawn(function()
-    game:GetService("RunService").PostSimulation:Connect(function()
+    local RunService = game:GetService("RunService")
+    
+    RunService.Heartbeat:Connect(function()
         if isReachActive and lp.Character then
             local ball = getBall()
             local char = lp.Character
             local root = char:FindFirstChild("HumanoidRootPart")
             
             if ball and root and ball:IsA("BasePart") then
-                local mag = (root.Position - ball.Position).Magnitude
+                -- Prediction logic to compensate for latency
+                local predictedPosition = ball.Position + (ball.AssemblyLinearVelocity * 0.1)
                 
-                if mag <= reachDistance then
+                -- Maximum safe distance constraint (Safety Lock: 26)
+                local currentDistance = (root.Position - predictedPosition).Magnitude
+                local safeReach = math.min(reachDistance, 26)
+
+                if currentDistance <= safeReach then
                     pcall(function()
-                        local parts = {
+                        local contactParts = {
                             char:FindFirstChild("Right Foot"),
                             char:FindFirstChild("Left Foot"),
-                            char:FindFirstChild("Right Lower Leg"),
-                            char:FindFirstChild("Left Lower Leg"),
                             root
                         }
 
-                        for i = 1, 20 do
-                            for _, p in pairs(parts) do
-                                if p then
-                                    firetouchinterest(p, ball, 0)
-                                    firetouchinterest(p, ball, 1)
-                                end
+                        for _, part in pairs(contactParts) do
+                            if part then
+                                firetouchinterest(ball, part, 0)
+                                firetouchinterest(ball, part, 1)
                             end
                         end
                     end)
@@ -56,7 +59,7 @@ end)
 
 Tabs.Main:AddInput("ReachInput", {
     Title = "Reach Distance",
-    Default = "45",
+    Default = "26",
     Numeric = true,
     Finished = true,
     Callback = function(Value)
@@ -66,7 +69,7 @@ Tabs.Main:AddInput("ReachInput", {
 })
 
 Tabs.Main:AddToggle("ReachToggle", {
-    Title = "Activate",
+    Title = "Active Status",
     Default = false,
     Callback = function(Value)
         isReachActive = Value
