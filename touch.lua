@@ -2,7 +2,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 
 local Window = Fluent:CreateWindow({
     Title = "Touch Football | FORCE",
-    SubTitle = "Open Source Edition",
+    SubTitle = "VNG Edition | 80ms Optimized",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Theme = "Dark"
@@ -14,43 +14,52 @@ local reachDistance = 26
 local isReachActive = false
 local ballName = "Football"
 local lp = game.Players.LocalPlayer
+local statsService = game:GetService("Stats")
+local runService = game:GetService("RunService")
 
 local function getBall()
     return workspace:FindFirstChild(ballName) or workspace.Terrain:FindFirstChild(ballName)
 end
 
 task.spawn(function()
-    local RunService = game:GetService("RunService")
-    
-    RunService.Heartbeat:Connect(function()
-        if isReachActive and lp.Character then
-            local ball = getBall()
-            local char = lp.Character
-            local root = char:FindFirstChild("HumanoidRootPart")
+    runService.Stepped:Connect(function()
+        if not isReachActive then return end
+        
+        local char = lp.Character
+        if not char then return end
+        
+        local root = char:FindFirstChild("HumanoidRootPart")
+        local ball = getBall()
+        
+        if ball and root then
+            local ping = statsService.Network.ServerStatsItem["Data Ping"]:GetValue()
+            -- Adjusted prediction for 80ms (Lower factor for better close-range control)
+            local prediction = math.clamp(ping / 1000, 0.02, 0.12)
             
-            if ball and root and ball:IsA("BasePart") then
-                -- Prediction logic to compensate for latency
-                local predictedPosition = ball.Position + (ball.AssemblyLinearVelocity * 0.1)
+            local ballPos = ball.Position
+            local predictedPos = ballPos + (ball.AssemblyLinearVelocity * prediction)
+            
+            -- We check distance for both actual and predicted position
+            local distActual = (root.Position - ballPos).Magnitude
+            local distPredicted = (root.Position - predictedPos).Magnitude
+            
+            local limit = math.min(reachDistance, 26)
+
+            -- The "Anti-Counter" Logic: Triggers if either position is within reach
+            if distActual <= limit or distPredicted <= limit then
+                local contactParts = {root}
                 
-                -- Maximum safe distance constraint (Safety Lock: 26)
-                local currentDistance = (root.Position - predictedPosition).Magnitude
-                local safeReach = math.min(reachDistance, 26)
+                -- Add feet only if close to save CPU on weak devices
+                if distActual < 15 then
+                    table.insert(contactParts, char:FindFirstChild("Right Foot"))
+                    table.insert(contactParts, char:FindFirstChild("Left Foot"))
+                end
 
-                if currentDistance <= safeReach then
-                    pcall(function()
-                        local contactParts = {
-                            char:FindFirstChild("Right Foot"),
-                            char:FindFirstChild("Left Foot"),
-                            root
-                        }
-
-                        for _, part in pairs(contactParts) do
-                            if part then
-                                firetouchinterest(ball, part, 0)
-                                firetouchinterest(ball, part, 1)
-                            end
-                        end
-                    end)
+                for _, part in pairs(contactParts) do
+                    if part then
+                        firetouchinterest(ball, part, 0)
+                        firetouchinterest(ball, part, 1)
+                    end
                 end
             end
         end
