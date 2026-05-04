@@ -1,88 +1,57 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local RunService = game:GetService("RunService")
+local lp = game.Players.LocalPlayer
 
+-- Configuration
+local reachDistance = 26
+local isEnabled = false
+local ballName = "Football"
+
+-- UI
 local Window = Fluent:CreateWindow({
-    Title = "Touch Football | FORCE",
-    SubTitle = "VNG Edition | 80ms Optimized",
+    Title = "Touch Football | ELITE",
+    SubTitle = "Priority Logic",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Theme = "Dark"
 })
 
-local Tabs = { Main = Window:AddTab({ Title = "Main", Icon = "target" }) }
-
-local reachDistance = 26
-local isReachActive = false
-local ballName = "Football"
-local lp = game.Players.LocalPlayer
-local statsService = game:GetService("Stats")
-local runService = game:GetService("RunService")
-
-local function getBall()
-    return workspace:FindFirstChild(ballName) or workspace.Terrain:FindFirstChild(ballName)
-end
-
-task.spawn(function()
-    runService.Stepped:Connect(function()
-        if not isReachActive then return end
-        
-        local char = lp.Character
-        if not char then return end
-        
-        local root = char:FindFirstChild("HumanoidRootPart")
-        local ball = getBall()
-        
-        if ball and root then
-            local ping = statsService.Network.ServerStatsItem["Data Ping"]:GetValue()
-            -- Adjusted prediction for 80ms (Lower factor for better close-range control)
-            local prediction = math.clamp(ping / 1000, 0.02, 0.12)
-            
-            local ballPos = ball.Position
-            local predictedPos = ballPos + (ball.AssemblyLinearVelocity * prediction)
-            
-            -- We check distance for both actual and predicted position
-            local distActual = (root.Position - ballPos).Magnitude
-            local distPredicted = (root.Position - predictedPos).Magnitude
-            
-            local limit = math.min(reachDistance, 26)
-
-            -- The "Anti-Counter" Logic: Triggers if either position is within reach
-            if distActual <= limit or distPredicted <= limit then
-                local contactParts = {root}
-                
-                -- Add feet only if close to save CPU on weak devices
-                if distActual < 15 then
-                    table.insert(contactParts, char:FindFirstChild("Right Foot"))
-                    table.insert(contactParts, char:FindFirstChild("Left Foot"))
-                end
-
-                for _, part in pairs(contactParts) do
-                    if part then
-                        firetouchinterest(ball, part, 0)
-                        firetouchinterest(ball, part, 1)
-                    end
-                end
-            end
-        end
-    end)
-end)
+local Tabs = { Main = Window:AddTab({ Title = "Settings", Icon = "shield" }) }
 
 Tabs.Main:AddInput("ReachInput", {
-    Title = "Reach Distance",
+    Title = "Reach Range",
     Default = "26",
     Numeric = true,
-    Finished = true,
-    Callback = function(Value)
-        local num = tonumber(Value)
-        if num then reachDistance = num end
-    end
+    Callback = function(Value) reachDistance = tonumber(Value) or 26 end
 })
 
 Tabs.Main:AddToggle("ReachToggle", {
-    Title = "Active Status",
+    Title = "Enable Elite Reach",
     Default = false,
-    Callback = function(Value)
-        isReachActive = Value
-    end
+    Callback = function(Value) isEnabled = Value end
 })
+
+-- High Priority Execution
+-- Using PreSimulation to run BEFORE the physics engine solves collisions
+RunService.PreSimulation:Connect(function()
+    if not isEnabled then return end
+    
+    local char = lp.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    local ball = workspace:FindFirstChild(ballName) or workspace.Terrain:FindFirstChild(ballName)
+    
+    if root and ball and ball:IsA("BasePart") then
+        local mag = (root.Position - ball.Position).Magnitude
+        
+        if mag <= reachDistance then
+            -- Directional Vector for accurate hitting
+            local hitDir = root.CFrame.LookVector
+            local force = (hitDir * 65) + Vector3.new(0, 20, 0)
+            
+            -- ApplyImpulse is more reliable than setting Velocity directly
+            ball:ApplyImpulse(force)
+        end
+    end
+end)
 
 Window:SelectTab(1)
