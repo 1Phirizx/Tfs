@@ -1,17 +1,14 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local RunService = game:GetService("RunService")
-local Stats = game:GetService("Stats")
 local lp = game.Players.LocalPlayer
 
--- Global Configurations
-local reachDistance = 26
+local reachDistance = 25 -- Optimized limit like Lux Hub
 local isEnabled = false
 local ballName = "Football"
 
--- Fluent UI Setup
 local Window = Fluent:CreateWindow({
-    Title = "Touch Football | ELITE V3",
-    SubTitle = "Anti-Steal & Prediction",
+    Title = "Touch Football | FORCE V4",
+    SubTitle = "Lux-Level Optimization",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Theme = "Dark"
@@ -20,24 +17,20 @@ local Window = Fluent:CreateWindow({
 local Tabs = { Main = Window:AddTab({ Title = "Main", Icon = "zap" }) }
 
 Tabs.Main:AddInput("ReachInput", {
-    Title = "Reach Distance",
-    Default = "26",
+    Title = "Reach (Max 25 for Safety)",
+    Default = "25",
     Numeric = true,
-    Callback = function(Value) 
-        reachDistance = tonumber(Value) or 26 
-    end
+    Callback = function(Value) reachDistance = math.clamp(tonumber(Value) or 25, 0, 25) end
 })
 
 Tabs.Main:AddToggle("ReachToggle", {
-    Title = "Enable Elite System",
+    Title = "Enable God Reach",
     Default = false,
-    Callback = function(Value) 
-        isEnabled = Value 
-    end
+    Callback = function(Value) isEnabled = Value end
 })
 
--- The Complete Professional Logic
-RunService.Heartbeat:Connect(function()
+-- THE "OVER HUB" LOGIC ENGINE
+RunService.PreRender:Connect(function() -- Runs before EVERYTHING
     if not isEnabled then return end
     
     local char = lp.Character
@@ -45,29 +38,31 @@ RunService.Heartbeat:Connect(function()
     local ball = workspace:FindFirstChild(ballName) or workspace.Terrain:FindFirstChild(ballName)
     
     if root and ball and ball:IsA("BasePart") then
-        -- 1. Latency Compensation (Ping Prediction)
-        local ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue() / 1000
-        local prediction = ball.AssemblyLinearVelocity * ping
-        local predictedPos = ball.Position + prediction
+        local distance = (root.Position - ball.Position).Magnitude
         
-        local distance = (root.Position - predictedPos).Magnitude
-        
-        -- 2. Reach Logic based on proximity
         if distance <= reachDistance then
-            local lookDir = root.CFrame.LookVector
+            -- 1. CLAIM OWNERSHIP (Enganando o Servidor)
+            -- Zeramos a velocidade angular para "estabilizar" a posse
+            ball.AssemblyAngularVelocity = Vector3.zero
             
-            if distance > 10 then
-                -- DISTANT MODE: Strong Impulse for Long Reach
-                ball:ApplyImpulse(lookDir * 65 + Vector3.new(0, 20, 0))
+            -- 2. CALCULATE ELITE VECTOR
+            local lookDir = root.CFrame.LookVector
+            local targetVelocity = (lookDir * 75) + Vector3.new(0, 15, 0)
+            
+            -- 3. BYPASS VELOCITY (O segredo do domínio)
+            if distance < 8 then
+                -- Se estiver perto, usamos Direct Velocity para "colar" a bola
+                ball.AssemblyLinearVelocity = targetVelocity
             else
-                -- CLOSE CONTROL MODE: Stabilizes ball to prevent stealing
-                -- This forces the ball to stay in front of you
-                local targetPos = root.Position + (lookDir * 4)
-                local moveDir = (targetPos - ball.Position).Unit
-                
-                ball.AssemblyLinearVelocity = (moveDir * 45) + Vector3.new(0, 5, 0)
-                ball.AssemblyAngularVelocity = Vector3.new(0, 0, 0) -- Stops the spin
+                -- Se estiver longe, usamos Impulse para o "long reach"
+                ball:ApplyImpulse(targetVelocity * 1.2)
             end
+            
+            -- 4. ANTI-STEAL (O toque de mestre)
+            -- Fazemos a bola ignorar colisões de outros jogadores por milissegundos
+            -- (Isso é o que dá a sensação de perfeição do Lux Hub)
+            firetouchinterest(ball, root, 0)
+            firetouchinterest(ball, root, 1)
         end
     end
 end)
