@@ -1,4 +1,5 @@
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+-- Load Redz Library
+local RedzLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/REDZDEVS/REDZSERVERS/main/redzui"))()
 local RunService = game:GetService("RunService")
 local lp = game.Players.LocalPlayer
 
@@ -21,22 +22,39 @@ local function getBall()
     return nil
 end
 
-local Window = Fluent:CreateWindow({
-    Title = "Touch Football | FORCE V5 .REV",
-    SubTitle = "Anti-Block Engine",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(580, 460),
-    Theme = "Dark"
+-- Create Main Window
+local Window = RedzLib:MakeWindow({
+    Title = "Touch Football | FORCE V5",
+    SubTitle = "by Elite Developer",
+    SaveConfig = true,
+    ConfigFolder = "TouchFootballForce"
 })
 
-local Tabs = { Main = Window:AddTab({ Title = "Main", Icon = "zap" }) }
+-- Create Tab
+local MainTab = Window:MakeTab({"Main", "zap"})
 
-Tabs.Main:AddToggle("ReachToggle", {
-    Title = "Enable God Mode Reach",
+-- Toggle for Reach
+MainTab:AddToggle({
+    Name = "Enable God Mode Reach",
     Default = false,
-    Callback = function(Value) isEnabled = Value end
+    Callback = function(Value)
+        isEnabled = Value
+    end
 })
 
+-- Slider for Reach Distance (Redz handles sliders very smoothly)
+MainTab:AddSlider({
+    Name = "Reach Distance",
+    Min = 5,
+    Max = 45,
+    Default = 25,
+    Increase = 1,
+    Callback = function(Value)
+        reachDistance = tonumber(Value) or 25
+    end
+})
+
+-- High Priority Simulation Loop
 RunService.PreSimulation:Connect(function()
     if not isEnabled then return end
     
@@ -70,5 +88,3 @@ RunService.PreSimulation:Connect(function()
         end
     end
 end)
-
-Window:SelectTab(1)
