@@ -59,4 +59,3 @@ RunService.PreSimulation:Connect(function()
 end)
 
 Window:SelectTab(1)
-
