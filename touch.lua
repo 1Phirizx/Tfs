@@ -1,4 +1,4 @@
-local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local RunService = game:GetService("RunService")
 local lp = game.Players.LocalPlayer
 
@@ -21,43 +21,30 @@ local function getBall()
     return nil
 end
 
--- Create Window
-local Window = Rayfield:CreateWindow({
-    Name = "Touch Football | FORCE V6",
-    LoadingTitle = "Loading Lux Bypass Engine...",
-    LoadingSubtitle = "by Elite Developer",
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "TouchFootballForce",
-        FileName = "Config"
-    }
+local Window = Fluent:CreateWindow({
+    Title = "Touch Football | FORCE V6",
+    SubTitle = "Lux Bypass Edition",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Theme = "Dark"
 })
 
-local MainTab = Window:CreateTab("Main", 4483362458) -- Title, ImageID
+local Tabs = { Main = Window:AddTab({ Title = "Main", Icon = "zap" }) }
 
--- Toggle
-MainTab:CreateToggle({
-    Name = "Enable Lux-Style Reach",
-    CurrentValue = false,
-    Callback = function(Value)
-        isEnabled = Value
-    end,
+Tabs.Main:AddToggle("ReachToggle", {
+    Title = "Enable Lux-Style Reach",
+    Default = false,
+    Callback = function(Value) isEnabled = Value end
 })
 
--- Slider
-MainTab:CreateSlider({
-    Name = "Reach Distance",
-    Info = "Alcance dinâmico preditivo",
-    Min = 5,
-    Max = 45,
-    CurrentValue = 25,
-    Increment = 1,
-    Callback = function(Value)
-        reachDistance = tonumber(Value) or 25
-    end,
+Tabs.Main:AddSlider("ReachSlider", {
+    Title = "Reach Distance",
+    Description = "Bypass hitbox multiplier",
+    Default = 25, Min = 5, Max = 45, Rounding = 1,
+    Callback = function(Value) reachDistance = Value end
 })
 
--- LUX HUB METHOD (PostSimulation Spoofing)
+-- LUX HUB ENGINE (PostSimulation Spoofing)
 RunService.PostSimulation:Connect(function()
     if not isEnabled then return end
     
@@ -70,14 +57,17 @@ RunService.PostSimulation:Connect(function()
         local distance = (root.Position - ball.Position).Magnitude
         
         if distance <= reachDistance then
-            -- Hitbox Spoofing (Teleporta a perna pro servidor validar)
+            -- Guarda a posição real da perna
             local oldCFrame = leg.CFrame
+            
+            -- Teleporta a perna para a bola para o servidor validar o toque
             leg.CFrame = ball.CFrame
             
             firetouchinterest(ball, leg, 0)
             
             local lookDir = root.CFrame.LookVector
             
+            -- Injeta velocidade direta na rede da bola
             if distance < 10 then
                 ball.AssemblyLinearVelocity = (lookDir * 60) + Vector3.new(0, 15, 0)
             else
@@ -85,7 +75,11 @@ RunService.PostSimulation:Connect(function()
             end
             
             firetouchinterest(ball, leg, 1)
+            
+            -- Devolve a perna instantaneamente
             leg.CFrame = oldCFrame
         end
     end
 end)
+
+Window:SelectTab(1)
