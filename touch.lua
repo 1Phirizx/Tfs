@@ -4,8 +4,9 @@ local lp = game.Players.LocalPlayer
 
 local reachDistance = 25
 local isEnabled = false
+local lastShot = 0 -- Controla o delay entre os processamentos
 
--- AUTOMATIC BALL FINDER (English Only)
+-- AUTOMATIC BALL FINDER (Optimized)
 local function getBall()
     local primary = workspace:FindFirstChild("Football") or workspace:FindFirstChild("Ball") or workspace.Terrain:FindFirstChild("Football")
     if primary then return primary end
@@ -23,7 +24,7 @@ end
 
 local Window = Fluent:CreateWindow({
     Title = "Touch Football | FORCE V6",
-    SubTitle = "Lux Bypass Edition",
+    SubTitle = "Anti-Lag Bypass",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Theme = "Dark"
@@ -44,9 +45,12 @@ Tabs.Main:AddSlider("ReachSlider", {
     Callback = function(Value) reachDistance = Value end
 })
 
--- LUX HUB ENGINE (PostSimulation Spoofing)
+-- LUX HUB ENGINE (Optimized & Slower Rate to prevent FPS drops)
 RunService.PostSimulation:Connect(function()
     if not isEnabled then return end
+    
+    -- Só roda a checagem pesada se passou um intervalo mínimo (Evita travar o processador)
+    if os.clock() - lastShot < 0.03 then return end
     
     local char = lp.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
@@ -57,26 +61,27 @@ RunService.PostSimulation:Connect(function()
         local distance = (root.Position - ball.Position).Magnitude
         
         if distance <= reachDistance then
-            -- Guarda a posição real da perna
+            lastShot = os.clock() -- Registra o momento do chute
+            
+            -- Armazena CFrame original de forma limpa
             local oldCFrame = leg.CFrame
             
-            -- Teleporta a perna para a bola para o servidor validar o toque
+            -- Teleporte ultra-rápido apenas no frame de disparo
             leg.CFrame = ball.CFrame
-            
             firetouchinterest(ball, leg, 0)
             
             local lookDir = root.CFrame.LookVector
             
-            -- Injeta velocidade direta na rede da bola
+            -- Aplica a velocidade sem sobrecarregar a rede do jogo
             if distance < 10 then
-                ball.AssemblyLinearVelocity = (lookDir * 60) + Vector3.new(0, 15, 0)
+                ball.AssemblyLinearVelocity = (lookDir * 55) + Vector3.new(0, 15, 0)
             else
-                ball.AssemblyLinearVelocity = (lookDir * 75) + Vector3.new(0, 20, 0)
+                ball.AssemblyLinearVelocity = (lookDir * 70) + Vector3.new(0, 20, 0)
             end
             
             firetouchinterest(ball, leg, 1)
             
-            -- Devolve a perna instantaneamente
+            -- Retorno imediato
             leg.CFrame = oldCFrame
         end
     end
