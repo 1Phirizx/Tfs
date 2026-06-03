@@ -1,11 +1,11 @@
-local RedzLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/REDZDEVS/REDZSERVERS/main/redzui"))()
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
 local RunService = game:GetService("RunService")
 local lp = game.Players.LocalPlayer
 
 local reachDistance = 25
 local isEnabled = false
 
--- AUTOMATIC BALL FINDER
+-- AUTOMATIC BALL FINDER (English Only)
 local function getBall()
     local primary = workspace:FindFirstChild("Football") or workspace:FindFirstChild("Ball") or workspace.Terrain:FindFirstChild("Football")
     if primary then return primary end
@@ -21,56 +21,63 @@ local function getBall()
     return nil
 end
 
-local Window = RedzLib:MakeWindow({
-    Title = "Touch Football | FORCE V6",
-    SubTitle = "Lux Bypass Edition",
-    SaveConfig = true,
-    ConfigFolder = "TouchFootballForce"
+-- Create Window
+local Window = Rayfield:CreateWindow({
+    Name = "Touch Football | FORCE V6",
+    LoadingTitle = "Loading Lux Bypass Engine...",
+    LoadingSubtitle = "by Elite Developer",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "TouchFootballForce",
+        FileName = "Config"
+    }
 })
 
-local MainTab = Window:MakeTab({"Main", "zap"})
+local MainTab = Window:CreateTab("Main", 4483362458) -- Title, ImageID
 
-MainTab:AddToggle({
+-- Toggle
+MainTab:CreateToggle({
     Name = "Enable Lux-Style Reach",
-    Default = false,
-    Callback = function(Value) isEnabled = Value end
+    CurrentValue = false,
+    Callback = function(Value)
+        isEnabled = Value
+    end,
 })
 
-MainTab:AddSlider({
+-- Slider
+MainTab:CreateSlider({
     Name = "Reach Distance",
-    Min = 5, Max = 45, Default = 25, Increase = 1,
-    Callback = function(Value) reachDistance = tonumber(Value) or 25 end
+    Info = "Alcance dinâmico preditivo",
+    Min = 5,
+    Max = 45,
+    CurrentValue = 25,
+    Increment = 1,
+    Callback = function(Value)
+        reachDistance = tonumber(Value) or 25
+    end,
 })
 
--- MÉTODO LUX HUB: Simulação Física por Interpolação de Posição
+-- LUX HUB METHOD (PostSimulation Spoofing)
 RunService.PostSimulation:Connect(function()
     if not isEnabled then return end
     
     local char = lp.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     local ball = getBall()
-    
-    -- Detecta a perna do seu personagem (R15 ou R6)
     local leg = char and (char:FindFirstChild("RightFoot") or char:FindFirstChild("Right Leg") or char:FindFirstChild("LeftFoot"))
     
     if root and ball and ball:IsA("BasePart") and leg then
-        -- Calcula a distância real até a bola
         local distance = (root.Position - ball.Position).Magnitude
         
         if distance <= reachDistance then
-            -- SEGREDO DOS HUBS: Estender o Hitbox da perna em direção à bola no frame exato da simulação
-            -- Isso faz o Servidor registrar um toque legítimo do seu personagem
+            -- Hitbox Spoofing (Teleporta a perna pro servidor validar)
             local oldCFrame = leg.CFrame
-            
-            -- Move temporariamente a perna para a posição da bola
             leg.CFrame = ball.CFrame
             
-            -- Dispara o interesse físico e a velocidade na direção que você está olhando
             firetouchinterest(ball, leg, 0)
             
             local lookDir = root.CFrame.LookVector
             
-            -- Força injetada direto na rede da bola (Ignora bloqueios locais)
             if distance < 10 then
                 ball.AssemblyLinearVelocity = (lookDir * 60) + Vector3.new(0, 15, 0)
             else
@@ -78,8 +85,6 @@ RunService.PostSimulation:Connect(function()
             end
             
             firetouchinterest(ball, leg, 1)
-            
-            -- Devolve a perna para a posição original instantaneamente para ninguém ver você esticado
             leg.CFrame = oldCFrame
         end
     end
