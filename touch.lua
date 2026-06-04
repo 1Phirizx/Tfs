@@ -1,4 +1,4 @@
--- [[ FORCE HUB V6.1 - ABSOLUTE MAGNETIC EDITION ]]
+-- [[ FORCE HUB V6.2 - PROFESSIONAL ELITE EDITION ]]
 
 local successUI, Fluent = pcall(function()
     return loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
@@ -14,15 +14,15 @@ local Stats = game:GetService("Stats")
 local HttpService = game:GetService("HttpService")
 local lp = game.Players.LocalPlayer
 
--- [[ CONFIG MANAGEMENT ]]
+-- [[ SYSTEM CONFIGURATION ]]
 local configFileName = "ForceHub_Config.json"
 local _G_CONFIG = {
     reachDistance = 25,
     isEnabled = false,
-    power = 75, -- Base power slightly increased for structural dominance
+    power = 65,
     lift = 18,
     visualizer = false,
-    antiWall = false -- Defaulted to false for maximum aggressive reach
+    antiWall = false
 }
 
 local function loadSettings()
@@ -49,7 +49,7 @@ end
 
 loadSettings()
 
--- [[ CACHING ENGINE ]]
+-- [[ LIGHTWEIGHT INSTANCE CACHING ]]
 local cachedBall = nil
 local function getBall()
     if cachedBall and cachedBall.Parent and cachedBall:IsA("BasePart") then
@@ -75,10 +75,10 @@ local function hasLineOfSight(root, ball)
     return result == nil
 end
 
--- [[ INTERFACE ]]
+-- [[ USER INTERFACE SETUP ]]
 local Window = Fluent:CreateWindow({
-    Title = "FORCE HUB | v6.1",
-    SubTitle = "Magnetic Physics Suite",
+    Title = "FORCE HUB | v6.2",
+    SubTitle = "Professional Physics Suite",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Theme = "Dark",
@@ -91,14 +91,14 @@ local Tabs = {
 }
 
 local ReachToggle = Tabs.Main:AddToggle("ReachToggle", {
-    Title = "Enable Magnetic Reach",
+    Title = "Enable Professional Reach",
     Default = _G_CONFIG.isEnabled,
     Callback = function(Value) _G_CONFIG.isEnabled = Value saveSettings() end
 })
 
 local ReachSlider = Tabs.Main:AddSlider("ReachSlider", {
     Title = "Reach Distance",
-    Description = "Dynamic reach multiplier",
+    Description = "Dynamic reach multiplier range",
     Default = _G_CONFIG.reachDistance, Min = 5, Max = 45, Rounding = 1,
     Callback = function(Value) _G_CONFIG.reachDistance = Value saveSettings() end
 })
@@ -138,56 +138,51 @@ pcall(function() VisualSphere.Parent = game:GetService("CoreGui") end)
 
 local lastShot = 0
 
--- [[ CORE MAGNET ENGINE (DOUBLE-TAP PHYSICS SOLVER) ]]
-local function processMagneticPhysics(stage)
-    if not _G_CONFIG.isEnabled then return end
-    
+-- [[ CORE PROFESSIONAL ENGINE (PRE-RENDER FRAME MANIPULATION) ]]
+RunService.PreRender:Connect(function()
     local char = lp.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     local ball = getBall()
     local leg = char and (char:FindFirstChild("RightFoot") or char:FindFirstChild("Right Leg") or char:FindFirstChild("LeftFoot"))
     
-    if stage == "visual" and root then
-        if _G_CONFIG.visualizer and _G_CONFIG.isEnabled then
-            VisualSphere.Adornee = root
-        else
-            VisualSphere.Adornee = nil
-        end
-        return
+    if _G_CONFIG.visualizer and root and _G_CONFIG.isEnabled then
+        VisualSphere.Adornee = root
+    else
+        VisualSphere.Adornee = nil
     end
 
-    -- Latency-optimized thread defense (Allows faster loop tracking for magnetic effect)
-    if os.clock() - lastShot < 0.008 then return end 
+    if not _G_CONFIG.isEnabled then return end
 
     if root and ball and ball:IsA("BasePart") and leg then
+        -- Subtle jitter to randomize server logging patterns
         local jitter = math.random(-3, 3) * 0.1
         local adaptiveReach = _G_CONFIG.reachDistance + jitter
         
+        -- Elite Forward Offset Projection Line
         local headStart = root.CFrame.Position + (root.CFrame.LookVector * 4) 
         local distance = (headStart - ball.Position).Magnitude
         
         if distance <= adaptiveReach and hasLineOfSight(root, ball) then
             if firetouchinterest then
-                lastShot = os.clock()
-                
-                -- Force absolute CFrame synchronization across network ownership
+                -- Single high-priority execution block (Avoids multi-thread packet collisions)
                 local oldCFrame = leg.CFrame
                 leg.CFrame = ball.CFrame
                 
-                -- INJECTION 1: Claim ownership before server frame computation
                 firetouchinterest(ball, leg, 0)
                 
                 local lookDir = root.CFrame.LookVector
                 local velocityMultiplier = 1.0
                 
+                -- Check character internal velocity to handle deceleration and stationary plays
                 pcall(function()
                     local vel = root.AssemblyLinearVelocity
                     local magnitude = math.sqrt(vel.X^2 + vel.Y^2 + vel.Z^2)
-                    if magnitude < 14 then
-                        velocityMultiplier = 1.35 -- Increased to 35% extra power when stopped/slow to force magnetism
+                    if magnitude < 10 then
+                        velocityMultiplier = 1.3 -- 30% absolute acceleration bonus when stopped
                     end
                 end)
                 
+                -- Inject velocities straight into the active instance stream
                 local finalPower = _G_CONFIG.power * velocityMultiplier
                 ball.AssemblyLinearVelocity = (lookDir * finalPower) + Vector3.new(0, _G_CONFIG.lift, 0)
                 
@@ -195,23 +190,14 @@ local function processMagneticPhysics(stage)
                     ball.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
                 end)
                 
-                -- INJECTION 2: Re-verify ownership to bypass aggressive anti-cheat deletions
                 firetouchinterest(ball, leg, 1)
-                firetouchinterest(ball, leg, 0)
-                firetouchinterest(ball, leg, 1)
-                
                 leg.CFrame = oldCFrame
             end
         end
     end
-end
+end)
 
--- Double-bind physics pipeline to trap ball possession 
-RunService.PreSimulation:Connect(function() processMagneticPhysics("pre") end)
-RunService.PostSimulation:Connect(function() processMagneticPhysics("post") end)
-RunService.RenderStepped:Connect(function() processMagneticPhysics("visual") end)
-
--- [[ WATERMARK ]]
+-- [[ UI WATERMARK DISPLAY ]]
 local ScreenGui = Instance.new("ScreenGui")
 local Frame = Instance.new("Frame")
 local TextLabel = Instance.new("TextLabel")
@@ -242,7 +228,7 @@ task.spawn(function()
         pcall(function()
             ping = math.round(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
         end)
-        TextLabel.Text = string.format("FORCE HUB v6.1 | FPS: %d | Ping: %dms", fps, ping)
+        TextLabel.Text = string.format("FORCE HUB v6.2 | FPS: %d | Ping: %dms", fps, ping)
     end
 end)
 
